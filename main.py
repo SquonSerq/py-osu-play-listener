@@ -10,14 +10,21 @@ mapHits = ""
 
 def writeToFile(songData):
 	todayDate = datetime.datetime.now().date()
-	f = open(f"{todayDate}", "a")
+	if os.path.isdir("./plays data") != True:
+		os.mkdir("./plays data")
+	f = open(f"./plays data/{todayDate}.txt", "a")
 	f.write(songData)
 	f.close()
 
 writeToFile("New session! \n")
+print("Program started!")
 
 while True:
-	r = s.get("http://localhost:24050/json").json()
+	try:
+		r = s.get("http://localhost:24050/json").json()
+	except:
+		print("Error getting request! Try opening Gosumemory")
+		continue
 
 	if r['menu']['state'] == 0:
 		continue
