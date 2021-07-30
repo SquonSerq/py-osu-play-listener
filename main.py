@@ -34,7 +34,7 @@ while True:
 		
 		if currentStatus == 2:
 			songData = r['menu']['bm']['metadata']
-			songString = f"https://osu.ppy.sh/b/{r['menu']['bm']['id']} | {songData['artist']} - {songData['title']} {songData['difficulty']} | {r['menu']['mods']['str']}"
+			songString = f"{datetime.datetime.now()} | https://osu.ppy.sh/b/{r['menu']['bm']['id']} | {songData['artist']} - {songData['title']} {songData['difficulty']} | {r['menu']['mods']['str']}"
 			songStartTime = datetime.datetime.now()
 			playedTime = r['menu']['bm']['time']['current']
 
@@ -52,7 +52,7 @@ while True:
 
 	if playedTime > r['menu']['bm']['time']['current'] and statusCode == 2:
 		songEndTime = datetime.datetime.now()
-		if datetime.timedelta(seconds=2) < songEndTime-songStartTime:
+		if datetime.timedelta(seconds=5) < songEndTime-songStartTime:
 			songString += f" | Time played: {songEndTime-songStartTime} | RETRY | {mapHits} \n"
 			print(songString) 
 			writeToFile(songString)
