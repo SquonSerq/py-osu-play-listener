@@ -1,6 +1,16 @@
-import requests, time, datetime, os
+import requests, time, datetime, os, pyperclip
 
 s = requests.Session()
+
+version = "20210731"
+
+verReq = requests.get("https://raw.githubusercontent.com/SquonSerq/py-osu-play-listener/main/version")
+
+if (verReq.text != version):
+	print("download new version!")
+	print("new version link copied to clipboard!")
+	print(verReq.text)
+	pyperclip.copy("https://github.com/SquonSerq/py-osu-play-listener/releases")
 
 songString = ""
 previousStatus = 5
