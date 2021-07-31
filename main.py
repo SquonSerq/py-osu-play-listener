@@ -2,11 +2,10 @@ import requests, time, datetime, os
 
 s = requests.Session()
 
-statusCode = 5
 songString = ""
+previousStatus = 5
 songStartTime = datetime.datetime.now()
-playedTime = -123123123
-mapHits = ""
+playedTime = 0
 
 def writeToFile(songData):
 	todayDate = datetime.datetime.now().date()
@@ -15,6 +14,14 @@ def writeToFile(songData):
 	f = open(f"./plays data/{todayDate}.txt", "a")
 	f.write(songData)
 	f.close()
+
+def makeStartStr(songInfo):
+	songData = songInfo['menu']['bm']['metadata']
+	return f"{datetime.datetime.now()} | https://osu.ppy.sh/b/{songInfo['menu']['bm']['id']} | {songData['artist']} - {songData['title']} {songData['difficulty']} | {r['menu']['mods']['str']}"
+
+def makeEndStr(stStr, endStatus, timePlayed, mapHits):
+	res = stStr + f" | Time played: {timePlayed} | {endStatus} | {mapHits} \n"
+	return res
 
 writeToFile("New session! \n")
 print("Program started!")
@@ -26,41 +33,42 @@ while True:
 		print("Error getting request! Try opening Gosumemory")
 		continue
 
-	if r['menu']['state'] == 0:
+	currentStatus = r['menu']['state']
+
+	if previousStatus != 2 and currentStatus == 2:
+		songString = makeStartStr(r)
+		songStartTime = datetime.datetime.now()
+		playedTime = r['menu']['bm']['time']['current']
+
+	if previousStatus == 2 and currentStatus == 5:
+		timePlayed = datetime.datetime.now() - songStartTime
+		songString = makeEndStr(songString, "LEAVE", timePlayed, mapHits)
+		writeToFile(songString)
+		print(songString)
+		previousStatus = r['menu']['state']
 		continue
-	
-	if r['menu']['state'] != statusCode:
-		currentStatus = r['menu']['state']
-		
-		if currentStatus == 2:
-			songData = r['menu']['bm']['metadata']
-			songString = f"{datetime.datetime.now()} | https://osu.ppy.sh/b/{r['menu']['bm']['id']} | {songData['artist']} - {songData['title']} {songData['difficulty']} | {r['menu']['mods']['str']}"
-			songStartTime = datetime.datetime.now()
-			playedTime = r['menu']['bm']['time']['current']
 
-		if currentStatus == 7:
-			songEndTime = datetime.datetime.now()
-			songString += f" | Time played: {songEndTime-songStartTime} | ENDED | {mapHits} \n"
-			print(songString) 
-			writeToFile(songString)
+	if previousStatus == 2 and currentStatus == 7:
+		timePlayed = datetime.datetime.now() - songStartTime
+		songString = makeEndStr(songString, "ENDED", timePlayed, mapHits)
+		writeToFile(songString)
+		print(songString)
+		previousStatus = r['menu']['state']
+		continue
 
-		if currentStatus == 5 and statusCode != 7:
-			songEndTime = datetime.datetime.now()
-			songString += f" | Time played: {songEndTime-songStartTime} | LEAVE | {mapHits} \n"
-			print(songString) 
-			writeToFile(songString)
-
-	if playedTime > r['menu']['bm']['time']['current'] and statusCode == 2:
+	if playedTime > r['menu']['bm']['time']['current'] and previousStatus == 2:
 		songEndTime = datetime.datetime.now()
 		if datetime.timedelta(seconds=5) < songEndTime-songStartTime:
-			songString += f" | Time played: {songEndTime-songStartTime} | RETRY | {mapHits} \n"
-			print(songString) 
+			songString = makeEndStr(songString, "RETRY", songEndTime-songStartTime, mapHits)
 			writeToFile(songString)
-			playedTime = r['menu']['bm']['time']['current']
-			statusCode = 0
+			print(songString)
+			playedTime = r['menu']['bm']['time']['current'] 
+			previousStatus = 228
 			continue
-
+	
+	playedTime = r['menu']['bm']['time']['current'] 
 	mapHits = f"{r['gameplay']['hits']['300']}-{r['gameplay']['hits']['100']}-{r['gameplay']['hits']['50']}-{r['gameplay']['hits']['0']}"
-	playedTime = r['menu']['bm']['time']['current']
-	statusCode =	r['menu']['state'] 
+	previousStatus = r['menu']['state']
+
+
 
